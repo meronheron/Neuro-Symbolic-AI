@@ -1,0 +1,48 @@
+% Domain: Type 2 Diabetes (T2D)
+% Fact format:
+% association(Gene, Trait, PValue, OR_Beta, StudyAccession).
+
+association('JMJD1C', 'Type 2 diabetes', 5e-6, 1.2, 'GCST004305').
+association('KCNQ1', 'Type 2 diabetes', 1e-6, 1.21, 'GCST004305').
+association('CDKN2B-AS1', 'Type 2 diabetes', 3e-8, 1.35, 'GCST001397').
+association('WFS1', 'Type 2 diabetes', 3e-18, null, 'GCST007077').
+association('CDKAL1', 'Type 2 diabetes', 5e-31, null, 'GCST007077').
+association('JAZF1', 'Type 2 diabetes', 2e-18, null, 'GCST007077').
+association('TCF7L2', 'Type 2 diabetes', 3e-300, null, 'GCST007077').
+association('IGF2BP2', 'Type 2 diabetes', 3e-30, null, 'GCST007077').
+association('FTO', 'Type 2 diabetes', 4e-31, null, 'GCST007077').
+association('SLC30A8', 'Type 2 diabetes', 2e-29, null, 'GCST007077').
+association('ATXN7L1', 'Chronic kidney disease in type 2 diabetes', 3e-6, 1.31, 'GCST005882').
+association('GABRR1', 'Diabetic kidney disease in type 2 diabetes', 4e-7, 1.18, 'GCST005895').
+
+% Rules
+% Rule 1: Genome-wide significance threshold (p-value < 5e-8)
+significant(Gene, Trait) :-
+    association(Gene, Trait, PValue, _, _),
+    PValue < 5e-8.
+
+% Rule 2: Confidence score between 0 and 1
+% Score = max(0, 1 - (PValue * 10))   [Demo formula]
+confidence(Gene, Trait, Score) :-
+    association(Gene, Trait, PValue, _, _),
+    RawScore is 1 - (PValue * 10),
+    (RawScore < 0 -> Score = 0 ; Score = RawScore).
+
+% Rule 3: Gene is related to T2D if trait contains "type 2 diabetes"
+related_to_t2d(Gene) :-
+    association(Gene, Trait, _, _, _),
+    sub_atom(Trait, _, _, _, 'type 2 diabetes').
+
+% Rule 4: Find top-risk gene (lowest p-value)
+top_gene(Gene, Trait, PValue) :-
+    setof(P-G-T, association(G, T, P, _, _), [PValue-Gene-Trait|_]).
+
+% Rule 5: List genes linked to T2D complications (e.g., kidney disease in T2D)
+complication_gene(Gene, Complication) :-
+    association(Gene, Complication, _, _, _),
+    sub_atom(Complication, _, _, _, 'kidney').
+
+% Rule 6: Group genes by study accession
+genes_in_study(Study, Genes) :-
+    setof(G, T^P^O^association(G, T, P, O, Study), Genes).
+
